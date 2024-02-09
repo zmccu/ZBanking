@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <limits>
 using namespace std;
 
 // Declare classes
@@ -39,14 +40,29 @@ public:
     // Deposit money
     void deposit(double amount)
     {
-        balance += amount;
-        transactions.push_back(Transaction("Deposit", amount));
-        cout << "Deposit of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
+        if (amount <= 0 || cin.fail())
+        {
+            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        else
+        {
+            balance += amount;
+            transactions.push_back(Transaction("Deposit", amount));
+            cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
+        }
     }
     // Withdraw money
     void withdraw(double amount)
     {
-        if (balance >= amount)
+        if (amount <= 0 || cin.fail())
+        {
+            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        else if (balance >= amount)
         {
             balance -= amount;
             transactions.push_back(Transaction("Withdrawal", -amount));
@@ -72,54 +88,61 @@ public:
 // Main
 int main()
 {
+    // Logout flag
+    bool logout = false;
     // You need to replace this with your server's API and create new instances of account and overwrite any matching fields
     Account account("zachary", "123");
-
-    // Authentication
-    string username, password;
-    cout << "Enter username: ";
-    cin >> username;
-    cout << "Enter password: ";
-    cin >> password;
-
-    if (account.authenticate(username, password))
+    while (true)
     {
-        cout << "Authentication successful.\n\nWelcome to ZBanking, " << username << "!" << endl;
-        while (true)
-        {
-            string userInput;
-            cout << ">>> ";
-            cin >> userInput;
+        // Authentication
+        string username, password;
+        cout << "Enter username: ";
+        cin >> username;
+        cout << "Enter password: ";
+        cin >> password;
 
-            // The deposit and withdraw commands need integration with your chosen API
-            if (userInput == "deposit")
+        if (account.authenticate(username, password))
+        {
+            cout << "Authentication successful.\n\nWelcome to ZBanking, " << username << "!" << endl;
+            while (true)
             {
-                int depositAmount;
-                cout << "Deposit amount: $";
-                cin >> depositAmount;
-                account.deposit(depositAmount);
-            }
-            else if (userInput == "withdraw")
-            {
-                int withdrawAmount;
-                cout << "Withdraw amount: $";
-                cin >> withdrawAmount;
-                account.withdraw(withdrawAmount);
-            }
-            else if (userInput == "history")
-            {
-                account.displayTransactionHistory();
-            }
-            else
-            {
-                cout << "We're sorry, the command you issued doesn't seem to exist. Please check your spelling, and if it still doesn't work, ask a nearby employee for help." << endl;
+                string userInput;
+                cout << ">>> ";
+                cin >> userInput;
+
+                // The deposit and withdraw commands need integration with your chosen API
+                if (userInput == "deposit")
+                {
+                    int depositAmount;
+                    cout << "Deposit amount: $";
+                    cin >> depositAmount;
+                    account.deposit(depositAmount);
+                }
+                else if (userInput == "withdraw")
+                {
+                    int withdrawAmount;
+                    cout << "Withdraw amount: $";
+                    cin >> withdrawAmount;
+                    account.withdraw(withdrawAmount);
+                }
+                else if (userInput == "history")
+                {
+                    account.displayTransactionHistory();
+                }
+                else if (userInput == "quit" or userInput == "exit")
+                {
+                    break;
+                }
+                else
+                {
+                    cout << "We're sorry, the command you issued doesn't seem to exist. Please check your spelling, and if it still doesn't work, ask a nearby employee for help." << endl;
+                }
             }
         }
+        else
+        {
+            cout << "Incorrect username or password. Please try again." << endl;
+            cin.get();
+        }
     }
-    else
-    {
-        cout << "Authentication failed. Exiting..." << endl;
-    }
-
-    return 0;
 }
