@@ -19,6 +19,12 @@ public:
     Transaction(string transDescription, double transAmount) : description(transDescription), amount{transAmount} {}
     string getDescription() const { return description; }
     double getAmount() const { return amount; }
+
+    friend ostream &operator<<(ostream &os, const Transaction &transaction)
+    {
+        os << "Description: " << transaction.description << ", Amount: $" << transaction.amount;
+        return os;
+    }
 };
 
 // Single account
@@ -35,12 +41,12 @@ public:
     // Auth user
     bool authenticate(string accUsername, string accPassword)
     {
-        return (accUsername == username && accPassword == password);
+        return (accUsername == username and accPassword == password);
     }
     // Deposit money
     void deposit(double amount)
     {
-        if (amount <= 0 || cin.fail())
+        if (amount <= 0 or cin.fail())
         {
             cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
             cin.clear();
@@ -56,7 +62,7 @@ public:
     // Withdraw money
     void withdraw(double amount)
     {
-        if (amount <= 0 || cin.fail())
+        if (amount <= 0 or cin.fail())
         {
             cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
             cin.clear();
@@ -79,11 +85,17 @@ public:
         cout << "Transaction History for " << username << ":" << endl;
         for (const Transaction &transaction : transactions)
         {
-            cout << transaction.getDescription() << ": $" << transaction.getAmount() << endl;
+            cout << transaction << endl;
         }
         cout << "Current Balance: $" << balance << endl;
     }
 };
+
+void clearScreen()
+{
+    system("clear"); // for linux users
+    system("cls");   // for windows users
+}
 
 // Main
 int main()
@@ -98,8 +110,10 @@ int main()
         string username, password;
         cout << "Enter username: ";
         cin >> username;
+        clearScreen();
         cout << "Enter password: ";
         cin >> password;
+        clearScreen();
 
         if (account.authenticate(username, password))
         {
@@ -125,12 +139,13 @@ int main()
                     cin >> withdrawAmount;
                     account.withdraw(withdrawAmount);
                 }
-                else if (userInput == "history")
+                else if (userInput == "history" or userInput == "transactions")
                 {
                     account.displayTransactionHistory();
                 }
                 else if (userInput == "quit" or userInput == "exit")
                 {
+                    clearScreen();
                     break;
                 }
                 else
