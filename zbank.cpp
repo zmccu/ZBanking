@@ -36,10 +36,10 @@ public:
     }
 };
 
-// Single account
+// Base Account class
 class Account
 {
-private:
+protected:
     string username;
     string password;
     int ID;
@@ -48,13 +48,23 @@ private:
 
 public:
     Account(string accUsername, string accPassword) : username(accUsername), password(accPassword), balance(0) {}
-    // Auth user
-    bool authenticate(string accUsername, string accPassword)
-    {
-        return (accUsername == username and accPassword == password);
-    }
-    // Deposit money
-    void deposit(double amount)
+
+    virtual void deposit(double amount) = 0;
+    virtual void withdraw(double amount) = 0;
+    virtual void displayTransactionHistory() const = 0;
+    virtual bool authenticate(string accUsername, string accPassword) const = 0;
+};
+
+// Checking Account subclass
+class CheckingAccount : public Account
+{
+private:
+    double overdraftLimit;
+
+public:
+    CheckingAccount(string accUsername, string accPassword, double overdraft) : Account(accUsername, accPassword), overdraftLimit(overdraft) {}
+
+    void deposit(double amount) override
     {
         if (amount <= 0 or cin.fail())
         {
@@ -69,8 +79,69 @@ public:
             cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
         }
     }
-    // Withdraw money
-    void withdraw(double amount)
+
+    void withdraw(double amount) override
+    {
+        if (amount <= 0 or cin.fail())
+        {
+            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        else if (balance + overdraftLimit >= amount)
+        {
+            balance -= amount;
+            transactions.push_back(Transaction("Withdrawal", -amount));
+            cout << "Withdrawal of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
+        }
+        else
+        {
+            cout << "Insufficient funds." << endl;
+        }
+    }
+
+    void displayTransactionHistory() const override
+    {
+        cout << "Transaction History for Checking Account " << username << ":" << endl;
+        for (const Transaction &transaction : transactions)
+        {
+            cout << transaction << endl;
+        }
+        cout << "Current Balance: $" << balance << endl;
+    }
+
+    bool authenticate(string accUsername, string accPassword) const override
+    {
+        return (accUsername == username && accPassword == password);
+    }
+};
+
+// Savings Account subclass
+class SavingsAccount : public Account
+{
+private:
+    double interestRate;
+
+public:
+    SavingsAccount(string accUsername, string accPassword, double interest) : Account(accUsername, accPassword), interestRate(interest) {}
+
+    void deposit(double amount) override
+    {
+        if (amount <= 0 or cin.fail())
+        {
+            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        else
+        {
+            balance += amount;
+            transactions.push_back(Transaction("Deposit", amount));
+            cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
+        }
+    }
+
+    void withdraw(double amount) override
     {
         if (amount <= 0 or cin.fail())
         {
@@ -89,23 +160,30 @@ public:
             cout << "Insufficient funds." << endl;
         }
     }
-    // Display transaction history
-    void displayTransactionHistory() const
+
+    void displayTransactionHistory() const override
     {
-        cout << "Transaction History for " << username << ":" << endl;
+        cout << "Transaction History for Savings Account " << username << ":" << endl;
         for (const Transaction &transaction : transactions)
         {
             cout << transaction << endl;
         }
         cout << "Current Balance: $" << balance << endl;
     }
+
+    bool authenticate(string accUsername, string accPassword) const override
+    {
+        return (accUsername == username && accPassword == password);
+    }
 };
 
 // Main
 int main()
 {
-    // You need to replace this with your server's API and create new instances of account and overwrite any matching fields
-    Account account("zachary", "123");
+    vector<Account *> accounts;
+    accounts.push_back(new CheckingAccount("zachary", "checking", 100));
+    accounts.push_back(new SavingsAccount("zachary", "savings", 0.05));
+
     while (true)
     {
         string process;
@@ -122,85 +200,84 @@ int main()
             cin >> password;
             clearScreen();
 
-            if (account.authenticate(username, password))
+            bool loggedIn = false;
+            for (Account *acc : accounts)
             {
-                cout << "Authentication successful.\n\nWelcome to ZBanking, " << username << "!" << endl;
-                while (true)
+                if (acc->authenticate(username, password))
                 {
-                    string userInput;
-                    cout << ">>> ";
-                    cin >> userInput;
+                    loggedIn = true;
+                    cout << "Authentication successful.\n\nWelcome to ZBanking, " << username << "!" << endl;
+                    while (true)
+                    {
+                        string userInput;
+                        cout << ">>> ";
+                        cin >> userInput;
 
-                    // The deposit and withdraw commands need integration with your chosen API
-                    if (startswith(userInput, 'd')) // deposit
-                    {
-                        cout << "Are you sure you would like to deposit? (yes/no)" << endl;
-                        cin >> userInput;
-                        if (startswith(userInput, 'y')) // yes
+                        if (startswith(userInput, 'd')) // deposit
                         {
-                            int depositAmount;
-                            cout << "Deposit amount: $";
-                            cin >> depositAmount;
-                            account.deposit(depositAmount);
+                            cout << "Are you sure you would like to deposit? (yes/no)" << endl;
+                            cin >> userInput;
+                            if (startswith(userInput, 'y')) // yes
+                            {
+                                int depositAmount;
+                                cout << "Deposit amount: $";
+                                cin >> depositAmount;
+                                acc->deposit(depositAmount);
+                            }
+                            else
+                            {
+                                cout << "Cancelling deposit process." << endl;
+                            }
+                        }
+                        else if (startswith(userInput, 'w')) // withdraw
+                        {
+                            cout << "Are you sure you would like to withdraw? (yes/no)" << endl;
+                            cin >> userInput;
+                            if (startswith(userInput, 'y')) // yes
+                            {
+                                int withdrawAmount;
+                                cout << "Withdraw amount: $";
+                                cin >> withdrawAmount;
+                                acc->withdraw(withdrawAmount);
+                            }
+                            else
+                            {
+                                cout << "Cancelling withdrawal process." << endl;
+                            }
+                        }
+                        else if (startswith(userInput, 't')) // transactions
+                        {
+                            acc->displayTransactionHistory();
+                        }
+                        else if (startswith(userInput, 'q')) // quit
+                        {
+                            clearScreen();
+                            break;
+                        }
+                        else if (startswith(userInput, 'h')) // help
+                        {
+                            cout << "deposit        | Deposits money into your account." << endl;
+                            cout << "withdraw       | Withdraws money from your account." << endl;
+                            cout << "transactions   | Displays your transaction history." << endl;
+                            cout << "help           | Displays this message." << endl;
+                            cout << "quit           | Logs out of your account." << endl;
                         }
                         else
                         {
-                            cout << "Cancelling deposit process." << endl;
+                            cout << "We're sorry, the command you issued doesn't seem to exist. Please check your spelling, and if it still doesn't work, ask a nearby employee for help." << endl;
                         }
-                    }
-                    else if (startswith(userInput, 'w')) // withdraw
-                    {
-                        cout << "Are you sure you would like to withdraw? (yes/no)" << endl;
-                        cin >> userInput;
-                        if (startswith(userInput, 'y')) // yes
-                        {
-                            int withdrawAmount;
-                            cout << "Withdraw amount: $";
-                            cin >> withdrawAmount;
-                            account.withdraw(withdrawAmount);
-                        }
-                        else
-                        {
-                            cout << "Cancelling withdrawal process." << endl;
-                        }
-                    }
-                    else if (startswith(userInput, 't')) // transactions
-                    {
-                        account.displayTransactionHistory();
-                    }
-                    else if (startswith(userInput, 'q')) // quit
-                    {
-                        clearScreen();
-                        break;
-                    }
-                    else if (startswith(userInput, 'h')) // help
-                    {
-                        cout << "deposit        | Deposits money into your account." << endl;
-                        cout << "withdraw       | Withdraws money from your account." << endl;
-                        cout << "transactions   | Displays your transaction history." << endl;
-                        cout << "help           | Displays this message." << endl;
-                        cout << "quit           | Logs out of your account." << endl;
-                    }
-                    else
-                    {
-                        cout << "We're sorry, the command you issued doesn't seem to exist. Please check your spelling, and if it still doesn't work, ask a nearby employee for help." << endl;
                     }
                 }
             }
-            else
+            if (!loggedIn)
             {
                 cout << "Incorrect username or password. Please try again." << endl;
                 cin.get();
             }
         }
-        else if (startswith(process, 'c'))
-        {
-            continue;
-        }
         else if (startswith(process, 'h'))
         {
             cout << "login          | Log into your ZBanking account." << endl;
-            cout << "create         | Create an account with ZBanking." << endl;
             cout << "help           | Displays this message." << endl;
         }
     }

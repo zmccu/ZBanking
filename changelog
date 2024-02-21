@@ -1,3 +1,7 @@
+Feb 21, 2024
+- Improved README.md
+- Added new account types for meeting the polymorphism and inheritance requirements
+
 Feb 20, 2024
 - Removed useless code
 - Added startswith utility for improved accessibility
