@@ -1,0 +1,6 @@
+Feb 20, 2024
+- Removed useless code
+- Added startswith utility for improved accessibility
+- Added ID int to Account class
+- Added login, create account, and help commands on program root
+- Added more comments
