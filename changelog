@@ -1,3 +1,7 @@
+Mar 5, 2024
+- Updated transaction structure as requested by Phase1Comments
+- Updated account management functionalities as requested by Phase1Comments
+
 Feb 21, 2024
 - Improved README.md
 - Added new account types for meeting the polymorphism and inheritance requirements
