@@ -142,14 +142,13 @@ public:
 // Base Account class
 class Account
 {
-protected:
+public:
     string username;
     string password;
     int ID;
     double balance;
     TransactionList transactions;
 
-public:
     Account(string accUsername, string accPassword) : username(accUsername), password(accPassword), balance(0) {}
 
     double getBalance() const { return balance; }
@@ -293,12 +292,79 @@ public:
     }
 };
 
+// Customer Node
+class CustomerNode
+{
+public:
+    Account *account;
+    CustomerNode *next;
+
+    CustomerNode(Account *acc) : account(acc), next(nullptr) {}
+};
+
+// Customer List
+class CustomerList
+{
+public:
+    CustomerNode *head;
+
+    CustomerList() : head(nullptr) {}
+
+    void addCustomer(Account *acc)
+    {
+        CustomerNode *newNode = new CustomerNode(acc);
+        if (!head)
+        {
+            head = newNode;
+        }
+        else
+        {
+            CustomerNode *temp = head;
+            while (temp->next)
+            {
+                temp = temp->next;
+            }
+            temp->next = newNode;
+        }
+    }
+
+    void displayCustomers() const
+    {
+        CustomerNode *temp = head;
+        while (temp)
+        {
+            cout << "Username: " << temp->account->username << endl;
+            temp = temp->next;
+        }
+    }
+
+    ~CustomerList()
+    {
+        while (head)
+        {
+            CustomerNode *temp = head;
+            head = head->next;
+            delete temp->account;
+            delete temp;
+        }
+    }
+};
+
 // Main
 int main()
 {
-    vector<Account *> accounts;
-    accounts.push_back(new CheckingAccount("zachary", "checking", 100));
-    accounts.push_back(new SavingsAccount("zachary", "savings", 0.05));
+    CustomerList customers;
+
+    // This is to display how the application can handle multiple users, and users with multiple accounts
+    // In real use, this would be replaced with something that links with a database
+    // but for now, this hardcoded sample usage is fine, i hope
+    CheckingAccount *_zacharychecking = new CheckingAccount("zachary", "checking", 100);
+    CheckingAccount *_zacharysavings = new CheckingAccount("zachary", "savings", 100);
+    SavingsAccount *_johnsavings = new SavingsAccount("john", "savings", 0.05);
+
+    customers.addCustomer(_zacharychecking);
+    customers.addCustomer(_zacharysavings);
+    customers.addCustomer(_johnsavings);
 
     while (true)
     {
@@ -317,9 +383,10 @@ int main()
             clearScreen();
 
             bool loggedIn = false;
-            for (Account *acc : accounts)
+            CustomerNode *temp = customers.head;
+            while (temp)
             {
-                if (acc->authenticate(username, password))
+                if (temp->account->authenticate(username, password))
                 {
                     loggedIn = true;
                     cout << "Authentication successful.\n\nWelcome to ZBanking, " << username << "!" << endl;
@@ -330,7 +397,7 @@ int main()
                         cin >> userInput;
                         if (startswith(userInput, 'b')) // balance
                         {
-                            cout << "Your current balance is: $" << acc->getBalance() << endl;
+                            cout << "Your current balance is: $" << temp->account->getBalance() << endl;
                         }
                         else if (startswith(userInput, 'd')) // deposit
                         {
@@ -341,7 +408,7 @@ int main()
                                 int depositAmount;
                                 cout << "Deposit amount: $";
                                 cin >> depositAmount;
-                                acc->deposit(depositAmount);
+                                temp->account->deposit(depositAmount);
                             }
                             else
                             {
@@ -357,7 +424,7 @@ int main()
                                 int withdrawAmount;
                                 cout << "Withdraw amount: $";
                                 cin >> withdrawAmount;
-                                acc->withdraw(withdrawAmount);
+                                temp->account->withdraw(withdrawAmount);
                             }
                             else
                             {
@@ -383,11 +450,11 @@ int main()
                                 time_t startDateTime = mktime(&startDate);
                                 time_t endDateTime = mktime(&endDate);
 
-                                acc->displayTransactionHistoryInRange(startDateTime, endDateTime);
+                                temp->account->displayTransactionHistoryInRange(startDateTime, endDateTime);
                             }
                             else
                             {
-                                acc->displayTransactionHistory();
+                                temp->account->displayTransactionHistory();
                             }
                         }
                         else if (startswith(userInput, 'c'))
@@ -400,26 +467,33 @@ int main()
                                 cin >> userInput;
                                 if (startswith(userInput, 'y'))
                                 {
-                                    if (acc->getBalance() > 0)
+                                    if (temp->account->getBalance() > 0)
                                     {
                                         cout << "Sorry, you cannot close your account until you remove all money from your account." << endl;
                                     }
-                                    else if (acc->getBalance() < 0)
+                                    else if (temp->account->getBalance() < 0)
                                     {
                                         cout << "Sorry, you cannot close your account until you pay your debts." << endl;
                                     }
                                     else
                                     {
                                         cout << "Closing account..." << endl;
-                                        for (auto it = accounts.begin(); it != accounts.end(); ++it)
+                                        delete temp->account;
+                                        // Delete node from list
+                                        if (temp == customers.head)
                                         {
-                                            if (*it == acc)
-                                            {
-                                                delete *it;
-                                                accounts.erase(it);
-                                                break;
-                                            }
+                                            customers.head = temp->next;
                                         }
+                                        else
+                                        {
+                                            CustomerNode *prev = customers.head;
+                                            while (prev->next != temp)
+                                            {
+                                                prev = prev->next;
+                                            }
+                                            prev->next = temp->next;
+                                        }
+                                        delete temp;
                                         clearScreen();
                                         break;
                                     }
@@ -451,6 +525,7 @@ int main()
                         }
                     }
                 }
+                temp = temp->next;
             }
             if (!loggedIn)
             {
@@ -464,4 +539,6 @@ int main()
             cout << "help           | Displays this message." << endl;
         }
     }
+
+    return 0;
 }
