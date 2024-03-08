@@ -3,6 +3,10 @@
 #include <string>
 #include <limits>
 #include <iomanip>
+#include <ctime>
+#include <sstream>
+#include <cmath>
+
 using namespace std;
 
 // Some utils
@@ -17,19 +21,25 @@ void clearScreen()
     system("cls");   // for windows users
 }
 
+// Class to handle date parsing
+class DateParser
+{
+public:
+    static tm parseDate(const std::string &dateStr)
+    {
+        tm date = {};
+        std::istringstream iss(dateStr);
+        iss >> std::get_time(&date, "%Y-%m-%d");
+        return date;
+    }
+};
+
+// Enum for transaction type
 enum class TransactionType
 {
     DEPOSIT,
     WITHDRAW
 };
-
-tm parseDate(const std::string &dateStr)
-{
-    tm date = {};
-    std::istringstream iss(dateStr);
-    iss >> std::get_time(&date, "%Y-%m-%d");
-    return date;
-}
 
 // Single transaction
 class Transaction
@@ -115,6 +125,7 @@ public:
             temp = temp->next;
         }
     }
+
     // Method to filter transactions within a date range
     void displayTransactionsInRange(time_t startDate, time_t endDate) const
     {
@@ -128,6 +139,7 @@ public:
             temp = temp->next;
         }
     }
+
     ~TransactionList()
     {
         while (head)
@@ -157,6 +169,26 @@ public:
     virtual void displayTransactionHistory() const = 0;
     virtual void displayTransactionHistoryInRange(time_t startDate, time_t endDate) const = 0;
     virtual bool authenticate(string accUsername, string accPassword) const = 0;
+};
+
+// Interest calculator class
+class InterestCalculator
+{
+public:
+    static double calculateInterest(double balance, double interestRate)
+    {
+        return balance * interestRate;
+    }
+};
+
+// Overdraft protection class
+class OverdraftProtection
+{
+public:
+    static bool checkOverdraft(double balance, double amount, double overdraftLimit)
+    {
+        return balance + overdraftLimit >= amount;
+    }
 };
 
 // Checking Account subclass
@@ -193,7 +225,7 @@ public:
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
-        else if (balance + overdraftLimit >= amount)
+        else if (OverdraftProtection::checkOverdraft(balance, amount, overdraftLimit))
         {
             balance -= amount;
             time_t currentTime = time(nullptr);
@@ -440,12 +472,12 @@ int main()
                                 cout << "Enter start date (YYYY-MM-DD): ";
                                 string startDateStr;
                                 cin >> startDateStr;
-                                tm startDate = parseDate(startDateStr);
+                                tm startDate = DateParser::parseDate(startDateStr);
 
                                 cout << "Enter end date (YYYY-MM-DD): ";
                                 string endDateStr;
                                 cin >> endDateStr;
-                                tm endDate = parseDate(endDateStr);
+                                tm endDate = DateParser::parseDate(endDateStr);
 
                                 time_t startDateTime = mktime(&startDate);
                                 time_t endDateTime = mktime(&endDate);
