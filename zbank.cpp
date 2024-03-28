@@ -9,17 +9,22 @@
 
 using namespace std;
 
+// C++14 | Variable template
+template <typename T>
+constexpr T overdraftLimit_V = T{100};
+
 // Some utils
 bool startswith(const string &s, char c)
 {
     return !s.empty() && s[0] == c;
 }
 
-void clearScreen()
+// C++14 | Lambda capture
+auto clearScreen = []
 {
     system("clear"); // for linux users
     system("cls");   // for windows users
-}
+};
 
 // Class to handle date parsing
 class DateParser
@@ -390,8 +395,8 @@ int main()
     // This is to display how the application can handle multiple users, and users with multiple accounts
     // In real use, this would be replaced with something that links with a database
     // but for now, this hardcoded sample usage is fine, i hope
-    CheckingAccount *_zacharychecking = new CheckingAccount("zachary", "checking", 100);
-    CheckingAccount *_zacharysavings = new CheckingAccount("zachary", "savings", 100);
+    CheckingAccount *_zacharychecking = new CheckingAccount("zachary", "checking", overdraftLimit_V<double>);
+    CheckingAccount *_zacharysavings = new CheckingAccount("zachary", "savings", overdraftLimit_V<double>);
     SavingsAccount *_johnsavings = new SavingsAccount("john", "savings", 0.05);
 
     customers.addCustomer(_zacharychecking);
