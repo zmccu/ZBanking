@@ -6,6 +6,7 @@
 #include <ctime>
 #include <sstream>
 #include <cmath>
+#include <stdexcept>
 
 using namespace std;
 
@@ -207,39 +208,53 @@ public:
 
     void deposit(double amount) override
     {
-        if (amount <= 0 or cin.fail())
+        try
         {
-            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            if (amount <= 0 or cin.fail())
+            {
+                throw runtime_error("Invalid amount entered.");
+            }
+            else
+            {
+                balance += amount;
+                time_t currentTime = time(nullptr);
+                transactions.addTransaction(Transaction("Deposit", amount, TransactionType::DEPOSIT, currentTime));
+                cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
+            }
+        }
+        catch (const exception &ex)
+        {
+            cerr << "Error: " << ex.what() << endl;
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        }
-        else
-        {
-            balance += amount;
-            time_t currentTime = time(nullptr);
-            transactions.addTransaction(Transaction("Deposit", amount, TransactionType::DEPOSIT, currentTime));
-            cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
         }
     }
 
     void withdraw(double amount) override
     {
-        if (amount <= 0 or cin.fail())
+        try
         {
-            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            if (amount <= 0 or cin.fail())
+            {
+                throw runtime_error("Invalid amount entered.");
+            }
+            else if (OverdraftProtection::checkOverdraft(balance, amount, overdraftLimit))
+            {
+                balance -= amount;
+                time_t currentTime = time(nullptr);
+                transactions.addTransaction(Transaction("Withdrawal", -amount, TransactionType::WITHDRAW, currentTime));
+                cout << "Withdrawal of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
+            }
+            else
+            {
+                throw runtime_error("Insufficient funds.");
+            }
+        }
+        catch (const exception &ex)
+        {
+            cerr << "Error: " << ex.what() << endl;
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        }
-        else if (OverdraftProtection::checkOverdraft(balance, amount, overdraftLimit))
-        {
-            balance -= amount;
-            time_t currentTime = time(nullptr);
-            transactions.addTransaction(Transaction("Withdrawal", -amount, TransactionType::WITHDRAW, currentTime));
-            cout << "Withdrawal of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
-        }
-        else
-        {
-            cout << "Insufficient funds." << endl;
         }
     }
 
@@ -274,39 +289,53 @@ public:
 
     void deposit(double amount) override
     {
-        if (amount <= 0 or cin.fail())
+        try
         {
-            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            if (amount <= 0 or cin.fail())
+            {
+                throw runtime_error("Invalid amount entered.");
+            }
+            else
+            {
+                balance += amount;
+                time_t currentTime = time(nullptr);
+                transactions.addTransaction(Transaction("Deposit", amount, TransactionType::DEPOSIT, currentTime));
+                cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
+            }
+        }
+        catch (const exception &ex)
+        {
+            cerr << "Error: " << ex.what() << endl;
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        }
-        else
-        {
-            balance += amount;
-            time_t currentTime = time(nullptr);
-            transactions.addTransaction(Transaction("Deposit", amount, TransactionType::DEPOSIT, currentTime));
-            cout << "Deposit of $" << amount << " successful.\nCurrent balance: $" << balance << endl;
         }
     }
 
     void withdraw(double amount) override
     {
-        if (amount <= 0 or cin.fail())
+        try
         {
-            cout << "Sorry, the amount you entered is invalid. Please try again." << endl;
+            if (amount <= 0 or cin.fail())
+            {
+                throw runtime_error("Invalid amount entered.");
+            }
+            else if (balance >= amount)
+            {
+                balance -= amount;
+                time_t currentTime = time(nullptr);
+                transactions.addTransaction(Transaction("Withdrawal", -amount, TransactionType::WITHDRAW, currentTime));
+                cout << "Withdrawal of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
+            }
+            else
+            {
+                throw runtime_error("Insufficient funds.");
+            }
+        }
+        catch (const exception &ex)
+        {
+            cerr << "Error: " << ex.what() << endl;
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        }
-        else if (balance >= amount)
-        {
-            balance -= amount;
-            time_t currentTime = time(nullptr);
-            transactions.addTransaction(Transaction("Withdrawal", -amount, TransactionType::WITHDRAW, currentTime));
-            cout << "Withdrawal of $" << amount << " successful.\nRemaining balance: $" << balance << endl;
-        }
-        else
-        {
-            cout << "Insufficient funds." << endl;
         }
     }
 
